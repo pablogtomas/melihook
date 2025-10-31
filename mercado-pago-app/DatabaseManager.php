@@ -47,7 +47,7 @@ class DatabaseManager {
     public static function obtenerPago($payment_id) {
         $db = Config::getDB();
         
-        $sql = "SELECT * FROM pagos WHERE payment_id = :payment_id";
+        $sql = "SELECT * FROM pagos WHERE payment_idd = :payment_id";
         $stmt = $db->prepare($sql);
         $stmt->execute([':payment_id' => $payment_id]);
         
