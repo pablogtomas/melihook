@@ -24,7 +24,8 @@ class Config {
     const DB_USER = 'root';
     const DB_PASS = '';
     
-    const MP_ACCESS_TOKEN = 'TEST-489689800042269-091923-6a5c714b5f4d5ba7d66c4119210923f6-185928508';
+    const MP_ACCESS_TOKEN = 'APP_USR-5726001139090018-082008-c9a942225ec19ee0ea666d2a1dc236d5-188036360';
+
     
     public static function getDB() {
         try {
