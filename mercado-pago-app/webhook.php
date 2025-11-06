@@ -3,37 +3,43 @@ require_once 'config.php';
 require_once 'MercadoPagoHandler.php';
 require_once 'DatabaseManager.php';
 
-// Log para debugging
-error_log("🔔 Webhook llamado: " . date('Y-m-d H:i:s'));
+// Log inicial
+error_log("🔔 Webhook/IPN llamado: " . date('Y-m-d H:i:s'));
 
-// Leer input JSON (formato actual)
+// Leer input JSON
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
-// Si el JSON está vacío, usar $_GET como fallback (modo legacy)
-if (!$data || !isset($data['data']['id'])) {
+// Si no hay JSON, usar $_GET (modo IPN legacy)
+if (empty($data)) {
     $data = $_GET;
 }
 
-// Detectar ID de pago en ambos formatos posibles
 $payment_id = null;
-if (isset($data['type']) && $data['type'] === 'payment') {
-    if (isset($data['data']['id'])) {
-        $payment_id = $data['data']['id']; // Formato nuevo (API v2)
-    } elseif (isset($data['id'])) {
-        $payment_id = $data['id']; // Formato legacy (Point Smart o IPN)
-    }
+
+// ✅ Formato moderno (Webhook JSON con POST)
+if (isset($data['type']) && $data['type'] === 'payment' && isset($data['data']['id'])) {
+    $payment_id = $data['data']['id'];
+}
+// ✅ Formato legacy IPN (?topic=payment&id=123456)
+elseif (isset($data['topic']) && $data['topic'] === 'payment' && isset($data['id'])) {
+    $payment_id = $data['id'];
+}
+
+elseif (isset($data['id']) && is_numeric($data['id'])) {
+    $payment_id = $data['id'];
 }
 
 // Si no se detectó un payment_id válido
 if (!$payment_id) {
-    error_log("❌ Datos de webhook inválidos o sin payment_id: " . print_r($data, true));
+    error_log("❌ Datos de webhook/IPN inválidos o sin payment_id: " . print_r($data, true));
     http_response_code(400);
     exit("Datos inválidos");
 }
 
 error_log("🔄 Procesando pago: " . $payment_id);
 
+// Instanciar el manejador de Mercado Pago
 $mpHandler = new MercadoPagoHandler();
 $pago_actualizado = $mpHandler->verificarPago($payment_id);
 
