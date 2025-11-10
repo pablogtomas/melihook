@@ -18,15 +18,7 @@ echo "<!DOCTYPE html>
 <body>
     <h1>📊 Dashboard de Pagos</h1>";
 
-// Obtener estadísticas
-$stats = DatabaseManager::obtenerEstadisticas();
 
-echo "<div class='card'>
-    <h3>📈 Estadísticas</h3>
-    <p>Total de pagos: <strong>{$stats['total_pagos']}</strong></p>
-    <p>Pagos aprobados: <strong>{$stats['pagos_aprobados']}</strong></p>
-    <p>Total recaudado: <strong>\${$stats['total_recaudado']}</strong></p>
-</div>";
 
 // Obtener últimos pagos
 $pagos = DatabaseManager::obtenerTodosLosPagos(20);
