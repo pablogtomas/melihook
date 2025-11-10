@@ -3,72 +3,88 @@ require_once 'config.php';
 require_once 'MercadoPagoHandler.php';
 require_once 'DatabaseManager.php';
 
-// Log inicial
 error_log("🔔 Webhook/IPN llamado: " . date('Y-m-d H:i:s'));
 
-// Leer input JSON
+// Leer JSON del body
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
-// Si no hay JSON, usar $_GET (modo IPN legacy)
+// Si no hay JSON, usar GET (modo IPN legacy)
 if (empty($data)) {
     $data = $_GET;
 }
 
 $payment_id = null;
 
-// ✅ Formato moderno (Webhook JSON con POST)
+// Formato moderno (webhook JSON)
 if (isset($data['type']) && $data['type'] === 'payment' && isset($data['data']['id'])) {
     $payment_id = $data['data']['id'];
 }
-// ✅ Formato legacy IPN (?topic=payment&id=123456)
-elseif (isset($data['topic']) && $data['topic'] === 'payment' && isset($data['id'])) {
-    $payment_id = $data['id'];
+// Formato legacy (?topic=payment&id=123456)
+elseif (isset($_GET['topic']) && $_GET['topic'] === 'payment' && isset($_GET['id'])) {
+    $payment_id = $_GET['id'];
 }
-// ✅ Fallback genérico
+// Fallback genérico
 elseif (isset($data['id']) && is_numeric($data['id'])) {
     $payment_id = $data['id'];
 }
 
-// Si no se detectó un payment_id válido
+// Validación
 if (!$payment_id) {
-    error_log("❌ Datos de webhook/IPN inválidos o sin payment_id: " . print_r($data, true));
+    error_log("❌ Datos inválidos o sin payment_id: " . print_r($data, true));
     http_response_code(400);
     exit("Datos inválidos");
 }
 
-// 🧪 Si es la prueba del panel de IPN (Mercado Pago usa el id=123456)
+// Prueba de IPN (id=123456)
 if ($payment_id == '123456') {
-    error_log("🧪 Prueba de IPN recibida correctamente (id=123456)");
+    error_log("🧪 Prueba IPN recibida correctamente (id=123456)");
     http_response_code(200);
     echo "Test OK";
     exit;
 }
 
-error_log("🔄 Procesando pago: " . $payment_id);
+error_log("🔄 Procesando pago con ID: {$payment_id}");
 
-// Instanciar el manejador de Mercado Pago
-$mpHandler = new MercadoPagoHandler();
-$pago_actualizado = $mpHandler->verificarPago($payment_id);
+// 🔹 Consultar el pago directamente desde la API con tu token
+$url = "https://api.mercadopago.com/v1/payments/" . $payment_id;
+$headers = [
+    "Authorization: Bearer " . Config::MP_ACCESS_TOKEN,
+    "Content-Type: application/json"
+];
 
-if ($pago_actualizado) {
-    error_log("📊 Estado del pago {$payment_id}: " . $pago_actualizado['status']);
+$context = stream_context_create([
+    'http' => [
+        'header' => implode("\r\n", $headers),
+        'method' => 'GET'
+    ]
+]);
 
-    // Si el pago ya existe en la BD → actualizar estado
-    if (DatabaseManager::pagoExiste($payment_id)) {
-        DatabaseManager::actualizarEstadoPago($payment_id, $pago_actualizado['status']);
-        error_log("✅ Pago {$payment_id} actualizado a: " . $pago_actualizado['status']);
+$response = file_get_contents($url, false, $context);
+
+// Guardar respuesta cruda para debugging
+file_put_contents(__DIR__ . '/mp_debug.log', "[" . date('Y-m-d H:i:s') . "] Pago ID {$payment_id}: " . $response . PHP_EOL, FILE_APPEND);
+
+// Parsear respuesta JSON
+$pago = json_decode($response, true);
+
+if (!empty($pago['id'])) {
+    error_log("📊 Pago {$pago['id']} recibido con estado: {$pago['status']}");
+
+    // Guardar o actualizar en la BD
+    if (DatabaseManager::pagoExiste($pago['id'])) {
+        DatabaseManager::actualizarEstadoPago($pago['id'], $pago['status']);
+        error_log("✅ Pago {$pago['id']} actualizado a: {$pago['status']}");
     } else {
-        // Si no existe → guardar nuevo registro
-        DatabaseManager::guardarPago($pago_actualizado);
-        error_log("📥 Pago {$payment_id} guardado en BD");
+        DatabaseManager::guardarPago($pago);
+        error_log("📥 Pago {$pago['id']} guardado en BD");
     }
 
     http_response_code(200);
     echo "OK";
 } else {
-    error_log("❌ No se pudo verificar pago {$payment_id}");
+    error_log("⚠️ No se pudo obtener información del pago ID {$payment_id}");
     http_response_code(400);
-    echo "Error verificando pago";
+    echo "Error al consultar pago";
 }
 ?>
