@@ -25,7 +25,7 @@ if (isset($data['type']) && $data['type'] === 'payment' && isset($data['data']['
 elseif (isset($data['topic']) && $data['topic'] === 'payment' && isset($data['id'])) {
     $payment_id = $data['id'];
 }
-
+// ✅ Fallback genérico
 elseif (isset($data['id']) && is_numeric($data['id'])) {
     $payment_id = $data['id'];
 }
@@ -35,6 +35,14 @@ if (!$payment_id) {
     error_log("❌ Datos de webhook/IPN inválidos o sin payment_id: " . print_r($data, true));
     http_response_code(400);
     exit("Datos inválidos");
+}
+
+// 🧪 Si es la prueba del panel de IPN (Mercado Pago usa el id=123456)
+if ($payment_id == '123456') {
+    error_log("🧪 Prueba de IPN recibida correctamente (id=123456)");
+    http_response_code(200);
+    echo "Test OK";
+    exit;
 }
 
 error_log("🔄 Procesando pago: " . $payment_id);
