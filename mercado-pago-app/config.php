@@ -19,10 +19,10 @@ if (!class_exists('MercadoPago\Client\Payment\PaymentClient')) {
 use MercadoPago\MercadoPagoConfig;
 
 class Config {
-    const DB_HOST = 'localhost';
+    const DB_HOST = '66.97.43.58';
     const DB_NAME = 'mercado_pago_db';
-    const DB_USER = 'root';
-    const DB_PASS = '';
+    const DB_USER = 'gaston';
+    const DB_PASS = 'campo40164234';
     
     const MP_ACCESS_TOKEN = 'APP_USR-5726001139090018-082008-c9a942225ec19ee0ea666d2a1dc236d5-188036360';
 
