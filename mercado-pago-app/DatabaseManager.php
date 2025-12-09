@@ -17,13 +17,14 @@ class DatabaseManager
         }
 
         $sql = "INSERT INTO pagos 
-                (payment_id, status, amount, description, payer_email, external_reference, created_at, updated_at)
+                (pos_id, payment_id, status, amount, description, payer_email, external_reference, created_at, updated_at)
                 VALUES 
-                (:payment_id, :status, :amount, :description, :payer_email, :external_reference, NOW(), NOW())";
+                (:pos_id :payment_id, :status, :amount, :description, :payer_email, :external_reference, NOW(), NOW())";
 
         $stmt = $db->prepare($sql);
 
         return $stmt->execute([
+             ':pos_id' => self::utf($payment_data['external_reference'] ?? 'SIN_POS'),
             ':payment_id' => $payment_data['id'],
             ':status' => self::utf($payment_data['status']),
             ':amount' => $payment_data['transaction_amount'] ?? 0,
