@@ -25,7 +25,8 @@ class DatabaseManager
         $stmt = $db->prepare($sql);
 
         return $stmt->execute([
-             ':pos_id' => self::utf($payment_data['external_reference'] ?? 'SIN_POS'),
+            ':pos_id' => 'POS1', 
+            //':pos_id' => self::utf($payment_data['external_reference'] ?? 'SIN_POS'),
             ':payment_id' => $payment_data['id'],
             ':status' => self::utf($payment_data['status']),
             ':amount' => $payment_data['transaction_amount'] ?? 0,
