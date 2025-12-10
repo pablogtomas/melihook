@@ -17,9 +17,10 @@ class DatabaseManager
         }
 
         $sql = "INSERT INTO pagos 
-                (pos_id, payment_id, status, amount, description, payer_email, external_reference, created_at, updated_at)
-                VALUES 
-                (:pos_id :payment_id, :status, :amount, :description, :payer_email, :external_reference, NOW(), NOW())";
+        (pos_id, payment_id, status, amount, description, payer_email, external_reference, created_at, updated_at)
+        VALUES 
+        (:pos_id, :payment_id, :status, :amount, :description, :payer_email, :external_reference, NOW(), NOW())";
+
 
         $stmt = $db->prepare($sql);
 
