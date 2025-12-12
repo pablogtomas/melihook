@@ -36,7 +36,7 @@ if (!$payment_id) {
     exit("Datos inválidos");
 }
 
-// Prueba de IPN (id=123456)
+
 if ($payment_id == '123456') {
     error_log("🧪 Prueba IPN recibida correctamente (id=123456)");
     http_response_code(200);
@@ -46,10 +46,11 @@ if ($payment_id == '123456') {
 
 error_log("🔄 Procesando pago con ID: {$payment_id}");
 
-// 🔹 Consultar el pago directamente desde la API con tu token
+
 $url = "https://api.mercadopago.com/v1/payments/" . $payment_id;
 $headers = [
-    "Authorization: Bearer " . Config::MP_ACCESS_TOKEN,
+   "Authorization: Bearer " . getenv('MP_ACCESS_TOKEN'),
+
     "Content-Type: application/json"
 ];
 
